@@ -248,6 +248,64 @@ app.get('/api/products/:id(\\d+)', (req, res) => {
   res.json(product);
 });
 
+app.get('/api/reports', (req, res) => {
+  const summary = db.prepare(`
+    SELECT
+      COUNT(*)                                          AS total_orders,
+      COALESCE(SUM(oi.quantity * oi.unit_price), 0)    AS total_revenue,
+      COALESCE(AVG(order_totals.total), 0)             AS avg_order_value,
+      COUNT(CASE WHEN o.status = 'shipped'   THEN 1 END) AS shipped,
+      COUNT(CASE WHEN o.status = 'pending'   THEN 1 END) AS pending,
+      COUNT(CASE WHEN o.status = 'cancelled' THEN 1 END) AS cancelled
+    FROM orders o
+    LEFT JOIN order_items oi ON o.order_id = oi.order_id
+    LEFT JOIN (
+      SELECT order_id, SUM(quantity * unit_price) AS total FROM order_items GROUP BY order_id
+    ) order_totals ON o.order_id = order_totals.order_id`).get();
+
+  const byMonth = db.prepare(`
+    SELECT strftime('%Y-%m', o.order_date) AS month,
+           COUNT(*)                        AS order_count,
+           COALESCE(SUM(oi.quantity * oi.unit_price), 0) AS revenue
+    FROM orders o
+    LEFT JOIN order_items oi ON o.order_id = oi.order_id
+    GROUP BY month
+    ORDER BY month`).all();
+
+  const topCustomers = db.prepare(`
+    SELECT c.company_name,
+           COUNT(DISTINCT o.order_id)                AS order_count,
+           COALESCE(SUM(oi.quantity * oi.unit_price), 0) AS total_spend
+    FROM customers c
+    JOIN orders o ON c.customer_id = o.customer_id
+    LEFT JOIN order_items oi ON o.order_id = oi.order_id
+    GROUP BY c.customer_id
+    ORDER BY total_spend DESC
+    LIMIT 5`).all();
+
+  const topProducts = db.prepare(`
+    SELECT p.product_name, p.category,
+           COALESCE(SUM(oi.quantity), 0)             AS units_sold,
+           COALESCE(SUM(oi.quantity * oi.unit_price), 0) AS revenue
+    FROM products p
+    LEFT JOIN order_items oi ON p.product_id = oi.product_id
+    GROUP BY p.product_id
+    ORDER BY revenue DESC
+    LIMIT 5`).all();
+
+  const byCategory = db.prepare(`
+    SELECT p.category,
+           COALESCE(SUM(oi.quantity * oi.unit_price), 0) AS revenue,
+           COALESCE(SUM(oi.quantity), 0) AS units_sold
+    FROM products p
+    LEFT JOIN order_items oi ON p.product_id = oi.product_id
+    WHERE p.category IS NOT NULL
+    GROUP BY p.category
+    ORDER BY revenue DESC`).all();
+
+  res.json({ summary, byMonth, topCustomers, topProducts, byCategory });
+});
+
 app.get('/api/orders', (req, res) => {
   const status     = req.query.status      ?? '';
   const customerId = Number(req.query.customer_id ?? 0);
