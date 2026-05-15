@@ -18,8 +18,9 @@
       --shipped: #10b981;
       --pending: #f59e0b;
       --cancelled: #ef4444;
+      --nav-bg: #1e3a5f;
       --radius: 8px;
-      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+      --shadow: 0 1px 3px rgba(0,0,0,.08);
       --shadow-lg: 0 10px 25px rgba(0,0,0,.12);
     }
 
@@ -30,28 +31,48 @@
       min-height: 100vh;
     }
 
-    /* ── Header ── */
-    header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
+    /* ── Nav bar ── */
+    nav {
+      background: var(--nav-bg);
       padding: 0 24px;
-      height: 60px;
+      height: 44px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 0;
       position: sticky;
       top: 0;
       z-index: 10;
     }
-    .logo {
-      width: 32px; height: 32px;
-      background: var(--accent);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
+    .nav-brand {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-right: 16px;
+      white-space: nowrap;
     }
-    .logo svg { width: 18px; height: 18px; fill: white; }
-    header h1 { font-size: 17px; font-weight: 700; letter-spacing: -.3px; }
-    header span { font-size: 13px; color: var(--muted); margin-left: 4px; }
+    .nav-sep { color: rgba(255,255,255,.3); margin-right: 16px; }
+    .nav-links { display: flex; gap: 2px; flex: 1; }
+    .nav-link {
+      color: rgba(255,255,255,.75);
+      text-decoration: none;
+      font-size: 13px;
+      padding: 0 12px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+    }
+    .nav-link:hover { color: #fff; }
+    .nav-link.active { color: #fff; border-bottom-color: #60a5fa; }
+    .nav-link.disabled { opacity: .4; cursor: default; pointer-events: none; }
+    .nav-user {
+      font-size: 13px;
+      color: rgba(255,255,255,.8);
+      margin-left: auto;
+      white-space: nowrap;
+    }
+    .nav-user strong { color: #fff; }
 
     /* ── Main layout ── */
     main { max-width: 1100px; margin: 0 auto; padding: 28px 24px; }
@@ -72,32 +93,47 @@
     }
     .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
     .stat-value { font-size: 26px; font-weight: 700; }
-    .stat-value.shipped { color: var(--shipped); }
-    .stat-value.pending { color: var(--pending); }
+    .stat-value.shipped  { color: var(--shipped); }
+    .stat-value.pending  { color: var(--pending); }
     .stat-value.cancelled { color: var(--cancelled); }
+
+    /* ── Page heading + filter links ── */
+    .page-header { margin-bottom: 16px; }
+    .page-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .filter-links { display: flex; gap: 4px; align-items: center; font-size: 13px; }
+    .filter-links span { color: var(--muted); }
+    .filter-link {
+      color: var(--accent);
+      text-decoration: none;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: background .1s;
+      cursor: pointer;
+    }
+    .filter-link:hover { background: #eff6ff; }
+    .filter-link.active { color: var(--text); font-weight: 600; text-decoration: none; }
 
     /* ── Toolbar ── */
     .toolbar {
       display: flex;
       gap: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       flex-wrap: wrap;
       align-items: center;
     }
-    .toolbar input, .toolbar select {
-      height: 38px;
+    .toolbar input {
+      height: 34px;
       border: 1px solid var(--border);
       border-radius: 6px;
       padding: 0 12px;
-      font-size: 14px;
+      font-size: 13px;
       background: var(--surface);
       color: var(--text);
       outline: none;
+      width: 220px;
       transition: border-color .15s;
     }
-    .toolbar input { width: 240px; }
-    .toolbar input:focus, .toolbar select:focus { border-color: var(--accent); }
-    .toolbar select { padding-right: 28px; cursor: pointer; }
+    .toolbar input:focus { border-color: var(--accent); }
     .result-count { font-size: 13px; color: var(--muted); margin-left: auto; }
 
     /* ── Table ── */
@@ -109,57 +145,53 @@
       overflow: hidden;
     }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    thead { background: #f8fafc; }
+    thead { background: #f0f4f8; }
     th {
-      padding: 11px 16px;
+      padding: 10px 14px;
       text-align: left;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
       border-bottom: 1px solid var(--border);
       white-space: nowrap;
     }
-    td { padding: 13px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tbody tr:last-child td { border-bottom: none; }
-    tbody tr { cursor: pointer; transition: background .1s; }
+    tbody tr { transition: background .1s; }
     tbody tr:hover { background: #f8fafc; }
     tbody tr.active { background: #eff6ff; }
 
-    .order-id { font-weight: 600; color: var(--accent); }
-    .company { font-weight: 500; }
+    .order-id { font-weight: 600; }
+    .customer-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .customer-link:hover { text-decoration: underline; }
     .date { color: var(--muted); font-size: 13px; white-space: nowrap; }
     .total { font-weight: 600; }
-    .items-count { color: var(--muted); font-size: 13px; }
-
-    /* ── Status badges ── */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 3px 10px;
-      border-radius: 99px;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: capitalize;
+    .items-count { color: var(--muted); }
+    .view-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
     }
-    .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
-    .badge.shipped  { background: #d1fae5; color: #065f46; }
-    .badge.shipped::before  { background: var(--shipped); }
-    .badge.pending  { background: #fef3c7; color: #92400e; }
-    .badge.pending::before  { background: var(--pending); }
-    .badge.cancelled { background: #fee2e2; color: #991b1b; }
-    .badge.cancelled::before { background: var(--cancelled); }
+    .view-link:hover { text-decoration: underline; }
+
+    /* ── Status ── */
+    .status-shipped  { color: var(--shipped); font-weight: 700; }
+    .status-pending  { color: var(--pending); font-weight: 700; }
+    .status-cancelled { color: var(--cancelled); font-weight: 700; }
 
     /* ── Empty / loading ── */
     .placeholder {
       text-align: center;
       padding: 60px 20px;
       color: var(--muted);
+      font-size: 15px;
     }
-    .placeholder svg { width: 40px; height: 40px; margin-bottom: 12px; opacity: .4; }
-    .placeholder p { font-size: 15px; }
 
     /* ── Detail panel ── */
     .overlay {
@@ -172,7 +204,7 @@
     .panel {
       position: fixed;
       top: 0; right: 0; bottom: 0;
-      width: 440px;
+      width: 460px;
       max-width: 100vw;
       background: var(--surface);
       box-shadow: var(--shadow-lg);
@@ -184,32 +216,31 @@
     .panel.open { transform: translateX(0); }
 
     .panel-header {
-      padding: 20px 24px 16px;
-      border-bottom: 1px solid var(--border);
+      background: var(--nav-bg);
+      padding: 16px 20px;
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: 12px;
       position: sticky; top: 0;
-      background: var(--surface);
     }
-    .panel-header h2 { font-size: 17px; font-weight: 700; }
-    .panel-header .sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .panel-header h2 { font-size: 16px; font-weight: 700; color: #fff; }
+    .panel-header .badge { font-size: 11px; }
     .close-btn {
-      width: 30px; height: 30px;
-      border: none; background: none;
+      width: 28px; height: 28px;
+      border: none; background: rgba(255,255,255,.15);
       cursor: pointer;
       border-radius: 6px;
       display: flex; align-items: center; justify-content: center;
-      color: var(--muted);
+      color: #fff;
       flex-shrink: 0;
       transition: background .1s;
     }
-    .close-btn:hover { background: var(--bg); color: var(--text); }
+    .close-btn:hover { background: rgba(255,255,255,.25); }
 
-    .panel-body { padding: 20px 24px; }
+    .panel-body { padding: 20px; }
 
-    .section { margin-bottom: 24px; }
+    .section { margin-bottom: 22px; }
     .section-title {
       font-size: 11px;
       font-weight: 700;
@@ -217,6 +248,8 @@
       letter-spacing: .08em;
       color: var(--muted);
       margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
     }
     .info-grid {
       display: grid;
@@ -256,6 +289,7 @@
       font-weight: 700;
       font-size: 15px;
       border-top: 2px solid var(--border);
+      margin-top: 4px;
     }
 
     .loading-spinner {
@@ -268,24 +302,41 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── Badge ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 99px;
+      font-size: 12px; font-weight: 600; text-transform: capitalize;
+    }
+    .badge::before { content:''; width:6px; height:6px; border-radius:50%; }
+    .badge.shipped   { background:#d1fae5; color:#065f46; }
+    .badge.shipped::before   { background:var(--shipped); }
+    .badge.pending   { background:#fef3c7; color:#92400e; }
+    .badge.pending::before   { background:var(--pending); }
+    .badge.cancelled { background:#fee2e2; color:#991b1b; }
+    .badge.cancelled::before { background:var(--cancelled); }
+
     @media (max-width: 700px) {
       .stats { grid-template-columns: repeat(2, 1fr); }
       .panel { width: 100vw; }
       .toolbar input { width: 100%; }
-      th:nth-child(3), td:nth-child(3),
       th:nth-child(5), td:nth-child(5) { display: none; }
     }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+<nav>
+  <span class="nav-brand">Northwind Logistics</span>
+  <span class="nav-sep">|</span>
+  <div class="nav-links">
+    <a class="nav-link active" href="#">Orders</a>
+    <a class="nav-link disabled" href="#">Customers</a>
+    <a class="nav-link disabled" href="#">Products</a>
+    <a class="nav-link disabled" href="#">Reports</a>
   </div>
-  <h1>Northwind Logistics</h1>
-  <span>Orders</span>
-</header>
+  <span class="nav-user">logged in as <strong>Gary Chen</strong></span>
+</nav>
 
 <main>
   <div class="stats">
@@ -307,14 +358,22 @@
     </div>
   </div>
 
+  <div class="page-header">
+    <h1>Orders</h1>
+    <div class="filter-links">
+      <span>Filter:</span>
+      <span class="filter-link active" data-status="">All</span>
+      <span class="nav-sep">|</span>
+      <span class="filter-link" data-status="pending">Pending</span>
+      <span class="nav-sep">|</span>
+      <span class="filter-link" data-status="shipped">Shipped</span>
+      <span class="nav-sep">|</span>
+      <span class="filter-link" data-status="cancelled">Cancelled</span>
+    </div>
+  </div>
+
   <div class="toolbar">
     <input type="text" id="search" placeholder="Search customer…" />
-    <select id="filter-status">
-      <option value="">All statuses</option>
-      <option value="pending">Pending</option>
-      <option value="shipped">Shipped</option>
-      <option value="cancelled">Cancelled</option>
-    </select>
     <span class="result-count" id="result-count"></span>
   </div>
 
@@ -330,6 +389,7 @@
           <th>Items</th>
           <th>Total</th>
           <th>Status</th>
+          <th></th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -341,12 +401,12 @@
 <div class="overlay" id="overlay"></div>
 <aside class="panel" id="panel">
   <div class="panel-header">
-    <div>
+    <div style="display:flex;align-items:center;gap:10px">
       <h2 id="panel-title">Order #—</h2>
-      <div class="sub" id="panel-sub"></div>
+      <span id="panel-badge"></span>
     </div>
     <button class="close-btn" id="close-btn" aria-label="Close">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
       </svg>
     </button>
@@ -357,78 +417,90 @@
 </aside>
 
 <script>
-  const tbody = document.getElementById('tbody');
+  const tbody   = document.getElementById('tbody');
   const overlay = document.getElementById('overlay');
-  const panel = document.getElementById('panel');
+  const panel   = document.getElementById('panel');
   const closeBtn = document.getElementById('close-btn');
 
-  let allOrders = [];
-  let activeRow = null;
+  let allOrders  = [];
+  let activeRow  = null;
+  let activeStatus = '';
 
-  // ── Fetch all orders ──────────────────────────────────────────────────────
+  // ── Load ──────────────────────────────────────────────────────────────────
   async function loadOrders() {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="loading-spinner"></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9"><div class="loading-spinner"></div></td></tr>`;
     try {
-      const res = await fetch('/api/orders');
+      const res  = await fetch('/api/orders');
       const json = await res.json();
-      allOrders = json.data;
+      allOrders  = json.data;
       updateStats(allOrders);
-      render(allOrders);
-    } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="8"><div class="placeholder"><p>Failed to load orders.</p></div></td></tr>`;
+      render(filtered());
+    } catch {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="placeholder">Failed to load orders.</div></td></tr>`;
     }
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────────
   function updateStats(orders) {
-    document.getElementById('stat-total').textContent = orders.length;
+    document.getElementById('stat-total').textContent     = orders.length;
     document.getElementById('stat-pending').textContent   = orders.filter(o => o.status === 'pending').length;
     document.getElementById('stat-shipped').textContent   = orders.filter(o => o.status === 'shipped').length;
     document.getElementById('stat-cancelled').textContent = orders.filter(o => o.status === 'cancelled').length;
   }
 
-  // ── Render table ──────────────────────────────────────────────────────────
+  // ── Filter ────────────────────────────────────────────────────────────────
+  function filtered() {
+    const q = document.getElementById('search').value.toLowerCase().trim();
+    return allOrders.filter(o =>
+      (!activeStatus || o.status === activeStatus) &&
+      (!q || o.company_name.toLowerCase().includes(q))
+    );
+  }
+
+  document.querySelectorAll('.filter-link').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.filter-link').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      activeStatus = el.dataset.status;
+      render(filtered());
+    });
+  });
+
+  document.getElementById('search').addEventListener('input', () => render(filtered()));
+
+  // ── Render ────────────────────────────────────────────────────────────────
   function render(orders) {
     document.getElementById('result-count').textContent =
-      orders.length === allOrders.length ? `${orders.length} orders` : `${orders.length} of ${allOrders.length} orders`;
+      orders.length === allOrders.length
+        ? `${orders.length} orders`
+        : `${orders.length} of ${allOrders.length} orders`;
 
     if (!orders.length) {
-      tbody.innerHTML = `<tr><td colspan="8"><div class="placeholder">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>
-        <p>No orders found</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9"><div class="placeholder">No orders found.</div></td></tr>`;
       return;
     }
 
     tbody.innerHTML = orders.map(o => `
       <tr data-id="${o.order_id}">
-        <td><span class="order-id">#${o.order_id}</span></td>
-        <td><span class="company">${esc(o.company_name)}</span></td>
-        <td class="date">${esc(o.first_name)} ${esc(o.last_name)}</td>
+        <td class="order-id">${o.order_id}</td>
+        <td><a class="customer-link" href="#">${esc(o.company_name)}</a></td>
+        <td>${esc(o.first_name)} ${esc(o.last_name)}</td>
         <td class="date">${fmtDate(o.order_date)}</td>
-        <td class="date">${o.ship_date ? fmtDate(o.ship_date) : '<span style="color:var(--muted)">—</span>'}</td>
+        <td class="date">${o.ship_date ? fmtDate(o.ship_date) : '—'}</td>
         <td class="items-count">${o.item_count}</td>
         <td class="total">$${Number(o.total).toFixed(2)}</td>
-        <td><span class="badge ${o.status}">${o.status}</span></td>
+        <td><span class="status-${o.status}" style="text-transform:capitalize">${o.status.charAt(0).toUpperCase()+o.status.slice(1)}</span></td>
+        <td><span class="view-link">View</span></td>
       </tr>`).join('');
 
     tbody.querySelectorAll('tr').forEach(tr => {
+      tr.querySelector('.view-link').addEventListener('click', e => {
+        e.stopPropagation();
+        openPanel(Number(tr.dataset.id), tr);
+      });
       tr.addEventListener('click', () => openPanel(Number(tr.dataset.id), tr));
     });
   }
-
-  // ── Filters ───────────────────────────────────────────────────────────────
-  function applyFilters() {
-    const q      = document.getElementById('search').value.toLowerCase().trim();
-    const status = document.getElementById('filter-status').value;
-    const filtered = allOrders.filter(o =>
-      (!status || o.status === status) &&
-      (!q || o.company_name.toLowerCase().includes(q))
-    );
-    render(filtered);
-  }
-
-  document.getElementById('search').addEventListener('input', applyFilters);
-  document.getElementById('filter-status').addEventListener('change', applyFilters);
 
   // ── Detail panel ──────────────────────────────────────────────────────────
   async function openPanel(id, row) {
@@ -437,24 +509,23 @@
     row.classList.add('active');
 
     document.getElementById('panel-title').textContent = `Order #${id}`;
-    document.getElementById('panel-sub').textContent = '';
+    document.getElementById('panel-badge').innerHTML = '';
     document.getElementById('panel-body').innerHTML = `<div class="loading-spinner"></div>`;
     overlay.classList.add('open');
     panel.classList.add('open');
 
     try {
       const res = await fetch(`/api/orders/${id}`);
-      const o = await res.json();
+      const o   = await res.json();
+      document.getElementById('panel-badge').innerHTML =
+        `<span class="badge ${o.status}">${o.status}</span>`;
       renderPanel(o);
     } catch {
-      document.getElementById('panel-body').innerHTML = `<p style="color:var(--cancelled)">Failed to load order details.</p>`;
+      document.getElementById('panel-body').innerHTML = `<p style="color:var(--cancelled);padding:20px">Failed to load order details.</p>`;
     }
   }
 
   function renderPanel(o) {
-    document.getElementById('panel-sub').innerHTML =
-      `<span class="badge ${o.status}" style="font-size:11px">${o.status}</span>`;
-
     const total = (o.items || []).reduce((s, i) => s + i.quantity * i.unit_price, 0);
 
     document.getElementById('panel-body').innerHTML = `
@@ -474,6 +545,7 @@
           <div class="info-item"><label>Order Date</label><span>${fmtDate(o.order_date)}</span></div>
           <div class="info-item"><label>Ship Date</label><span>${o.ship_date ? fmtDate(o.ship_date) : '—'}</span></div>
           <div class="info-item"><label>Handler</label><span>${esc(o.first_name)} ${esc(o.last_name)}</span></div>
+          <div class="info-item"><label>Status</label><span class="status-${o.status}" style="text-transform:capitalize">${o.status}</span></div>
         </div>
       </div>
 
@@ -516,8 +588,7 @@
   // ── Helpers ───────────────────────────────────────────────────────────────
   function fmtDate(s) {
     if (!s) return '—';
-    const d = new Date(s);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
   function esc(s) {
     return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
