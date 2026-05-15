@@ -175,8 +175,78 @@ const OrderRepository = {
 };
 
 // ---------------------------------------------------------------------------
+// Repositories
+// ---------------------------------------------------------------------------
+
+const CustomerRepository = {
+  list() {
+    return db.prepare(`
+      SELECT c.*,
+             COUNT(DISTINCT o.order_id) AS order_count
+      FROM customers c
+      LEFT JOIN orders o ON c.customer_id = o.customer_id
+      GROUP BY c.customer_id
+      ORDER BY c.company_name`).all();
+  },
+  findById(id) {
+    const customer = db.prepare(`SELECT * FROM customers WHERE customer_id = ?`).get(id);
+    if (!customer) return null;
+    customer.orders = db.prepare(`
+      SELECT o.order_id, o.order_date, o.ship_date, o.status,
+             e.first_name, e.last_name,
+             COUNT(oi.item_id) AS item_count,
+             COALESCE(SUM(oi.quantity * oi.unit_price), 0) AS total
+      FROM orders o
+      JOIN employees e ON o.employee_id = e.employee_id
+      LEFT JOIN order_items oi ON o.order_id = oi.order_id
+      WHERE o.customer_id = ?
+      GROUP BY o.order_id
+      ORDER BY o.order_date DESC`).all(id);
+    return customer;
+  },
+};
+
+const ProductRepository = {
+  list() {
+    return db.prepare(`
+      SELECT p.*, s.company_name AS supplier_name
+      FROM products p
+      LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id
+      ORDER BY p.category, p.product_name`).all();
+  },
+  findById(id) {
+    return db.prepare(`
+      SELECT p.*, s.company_name AS supplier_name, s.contact_name AS supplier_contact,
+             s.email AS supplier_email, s.phone AS supplier_phone
+      FROM products p
+      LEFT JOIN suppliers s ON p.supplier_id = s.supplier_id
+      WHERE p.product_id = ?`).get(id);
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Routes
 // ---------------------------------------------------------------------------
+
+app.get('/api/customers', (req, res) => {
+  res.json({ data: CustomerRepository.list() });
+});
+
+app.get('/api/customers/:id(\\d+)', (req, res) => {
+  const customer = CustomerRepository.findById(Number(req.params.id));
+  if (!customer) return res.status(404).json({ error: 'Customer not found' });
+  res.json(customer);
+});
+
+app.get('/api/products', (req, res) => {
+  res.json({ data: ProductRepository.list() });
+});
+
+app.get('/api/products/:id(\\d+)', (req, res) => {
+  const product = ProductRepository.findById(Number(req.params.id));
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+  res.json(product);
+});
 
 app.get('/api/orders', (req, res) => {
   const status     = req.query.status      ?? '';
