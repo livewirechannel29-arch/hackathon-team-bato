@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Northwind Logistics — Modernization Without the Big Bang</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0f1117;
+    --surface:  #1a1d27;
+    --border:   #2a2d3e;
+    --accent:   #4f8ef7;
+    --accent2:  #7c5cbf;
+    --green:    #3ecf8e;
+    --red:      #f76f6f;
+    --yellow:   #f7c948;
+    --text:     #e2e8f0;
+    --muted:    #7a8499;
+    --code-bg:  #141720;
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; }
+
+  /* ---- slide engine ---- */
+  .deck { width: 100%; height: 100vh; overflow: hidden; position: relative; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 60px 80px;
+    opacity: 0; transform: translateY(24px);
+    transition: opacity .35s ease, transform .35s ease;
+    pointer-events: none;
+  }
+  .slide.active { opacity: 1; transform: none; pointer-events: auto; }
+  .slide.out    { opacity: 0; transform: translateY(-24px); }
+
+  /* ---- nav ---- */
+  .nav {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 12px; align-items: center; z-index: 100;
+    background: rgba(26,29,39,.85); backdrop-filter: blur(8px);
+    border: 1px solid var(--border); border-radius: 40px; padding: 10px 20px;
+  }
+  .nav button {
+    background: none; border: none; color: var(--text); font-size: 18px; cursor: pointer;
+    padding: 4px 10px; border-radius: 6px; transition: background .15s;
+  }
+  .nav button:hover { background: var(--border); }
+  .nav button:disabled { opacity: .3; cursor: default; background: none; }
+  .counter { font-size: 13px; color: var(--muted); min-width: 50px; text-align: center; }
+  .dot-row { display: flex; gap: 6px; align-items: center; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); cursor: pointer; transition: background .2s; }
+  .dot.on { background: var(--accent); }
+
+  /* ---- typography ---- */
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+  h1 { font-size: clamp(32px, 4vw, 52px); font-weight: 700; line-height: 1.15; text-align: center; }
+  h2 { font-size: clamp(24px, 3vw, 38px); font-weight: 700; line-height: 1.2; }
+  h3 { font-size: 18px; font-weight: 600; color: var(--accent); margin-bottom: 10px; }
+  p, li { font-size: clamp(14px, 1.6vw, 18px); line-height: 1.7; color: var(--text); }
+  .muted { color: var(--muted); }
+  .center { text-align: center; }
+  .accent { color: var(--accent); }
+  .green  { color: var(--green); }
+  .red    { color: var(--red); }
+  .yellow { color: var(--yellow); }
+
+  /* ---- layout helpers ---- */
+  .cols { display: grid; gap: 32px; width: 100%; }
+  .cols-2 { grid-template-columns: 1fr 1fr; }
+  .cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .stack { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+
+  /* ---- cards ---- */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 28px;
+  }
+  .card.accent-border { border-color: var(--accent); }
+  .card.green-border  { border-color: var(--green); }
+  .card.red-border    { border-color: var(--red); }
+
+  /* ---- code ---- */
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px 24px; font-size: clamp(11px, 1.1vw, 13px); line-height: 1.6;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    overflow: auto; width: 100%;
+  }
+  .kw   { color: #c792ea; }
+  .str  { color: #c3e88d; }
+  .cmt  { color: #546e7a; font-style: italic; }
+  .fn   { color: #82aaff; }
+  .var  { color: #f07178; }
+  .op   { color: #89ddff; }
+  .num  { color: #f78c6c; }
+  .tag  { color: var(--yellow); }
+
+  /* ---- diagram ---- */
+  .diagram {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 12px;
+    padding: 28px 36px; font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: clamp(12px, 1.2vw, 14px); line-height: 1.9; width: 100%;
+  }
+
+  /* ---- table ---- */
+  table { width: 100%; border-collapse: collapse; font-size: clamp(13px, 1.3vw, 15px); }
+  th { background: var(--surface); color: var(--accent); text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(79,142,247,.05); }
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  }
+  .badge-green  { background: rgba(62,207,142,.15); color: var(--green); }
+  .badge-muted  { background: var(--border);         color: var(--muted); }
+  .badge-yellow { background: rgba(247,201,72,.15);  color: var(--yellow); }
+
+  /* ---- tag pills ---- */
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .pill {
+    padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;
+    background: var(--border); color: var(--muted);
+  }
+  .pill.hi { background: rgba(79,142,247,.15); color: var(--accent); }
+
+  /* ---- timeline ---- */
+  .timeline { display: flex; flex-direction: column; gap: 0; width: 100%; }
+  .tl-item { display: flex; gap: 20px; position: relative; }
+  .tl-item::before {
+    content: ''; position: absolute; left: 15px; top: 28px;
+    width: 2px; height: calc(100% + 4px); background: var(--border);
+  }
+  .tl-item:last-child::before { display: none; }
+  .tl-dot {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; margin-top: 2px;
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+    font-weight: 700; z-index: 1;
+  }
+  .tl-dot.done   { background: rgba(62,207,142,.2);  color: var(--green);  border: 2px solid var(--green); }
+  .tl-dot.next   { background: rgba(79,142,247,.15); color: var(--accent); border: 2px solid var(--accent); }
+  .tl-dot.future { background: var(--surface);       color: var(--muted);  border: 2px solid var(--border); }
+  .tl-body { padding-bottom: 24px; }
+  .tl-title { font-weight: 600; margin-bottom: 4px; }
+
+  /* ---- quote ---- */
+  blockquote {
+    border-left: 3px solid var(--accent2); padding: 12px 20px;
+    background: rgba(124,92,191,.08); border-radius: 0 8px 8px 0;
+    font-style: italic; font-size: clamp(15px, 1.8vw, 20px); color: var(--muted);
+    margin: 8px 0;
+  }
+
+  /* ---- title slide accent ---- */
+  .gradient-text {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .subtitle { font-size: clamp(16px, 2vw, 22px); color: var(--muted); margin-top: 16px; text-align: center; }
+  .hero-rule { width: 60px; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; margin: 24px auto; }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- ===== 1. TITLE ===== -->
+  <div class="slide active" data-slide="0">
+    <div class="eyebrow">Northwind Logistics</div>
+    <h1><span class="gradient-text">Modernization Without<br>the Big Bang</span></h1>
+    <div class="hero-rule"></div>
+    <p class="subtitle">A strangler fig demo: legacy monolith → modern API,<br>one route at a time, zero downtime.</p>
+    <div class="pills" style="justify-content:center;margin-top:28px">
+      <span class="pill hi">Python</span>
+      <span class="pill hi">Node.js</span>
+      <span class="pill hi">SQLite</span>
+      <span class="pill hi">Express</span>
+      <span class="pill hi">Strangler Fig Pattern</span>
+    </div>
+  </div>
+
+  <!-- ===== 2. THE SITUATION ===== -->
+  <div class="slide" data-slide="1">
+    <div class="eyebrow">The Problem</div>
+    <h2 style="margin-bottom:32px">"It works. Mostly.<br>Steve is gone."</h2>
+    <div class="cols cols-3" style="max-width:900px">
+      <div class="card red-border">
+        <h3 class="red">The Code</h3>
+        <p>SQL strings concatenated inline. Sessions in globals. 300 lines, one file. No tests, no docs.</p>
+      </div>
+      <div class="card red-border">
+        <h3 class="red">The People</h3>
+        <p>The developer who built it left in 2011. The manager who greenlit it retired in 2019.</p>
+      </div>
+      <div class="card red-border">
+        <h3 class="red">The Ask</h3>
+        <p>The board approved "modernization" without defining what that means. Orders are still going out every day.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 3. THE TRAP ===== -->
+  <div class="slide" data-slide="2">
+    <div class="eyebrow">Why Not Rewrite?</div>
+    <h2 style="margin-bottom:32px">The Big-Bang Trap</h2>
+    <div class="stack" style="max-width:740px">
+      <blockquote>"We'll rewrite it properly over six months, then cut over on a weekend."</blockquote>
+      <div class="cols cols-2">
+        <div class="card">
+          <h3 class="red">What Goes Wrong</h3>
+          <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+            <li>🔴 &nbsp;The cut-over weekend turns into three</li>
+            <li>🔴 &nbsp;Edge cases only production traffic reveals</li>
+            <li>🔴 &nbsp;Feature freeze during the rewrite</li>
+            <li>🔴 &nbsp;Rewrite inherits the same design mistakes</li>
+            <li>🔴 &nbsp;Team burns out; project gets cancelled</li>
+          </ul>
+        </div>
+        <div class="card green-border">
+          <h3 class="green">What We Do Instead</h3>
+          <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+            <li>✅ &nbsp;Legacy stays running throughout</li>
+            <li>✅ &nbsp;Extract one route at a time</li>
+            <li>✅ &nbsp;Same database — no migration</li>
+            <li>✅ &nbsp;Rollback = one config change</li>
+            <li>✅ &nbsp;Ship features while migrating</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 4. THE PATTERN ===== -->
+  <div class="slide" data-slide="3">
+    <div class="eyebrow">The Strategy</div>
+    <h2 style="margin-bottom:28px">The Strangler Fig</h2>
+    <div class="diagram" style="max-width:780px">
+<span class="cmt">                    ┌─────────────────────┐</span>
+<span class="cmt">                    │      Browser        │</span>
+<span class="cmt">                    └──────────┬──────────┘</span>
+<span class="cmt">                               │</span>
+<span class="cmt">                    ┌──────────▼──────────┐</span>
+<span class="accent">                    │   Strangler Proxy   │  ← migration control plane</span>
+<span class="cmt">                    └──────┬──────────────┘</span>
+<span class="cmt">                           │</span>
+<span class="cmt">           ┌───────────────┴────────────────┐</span>
+<span class="cmt">           │                                │</span>
+<span class="green">    /api/orders  ──▶                 /*  ──▶</span>
+<span class="cmt">  ┌──────────────────┐      ┌──────────────────────┐</span>
+<span class="green">  │  Modern API      │      │  Legacy Monolith      │</span>
+<span class="green">  │  Node + Express  │      │  Python (PHP 5 style) │</span>
+<span class="cmt">  └────────┬─────────┘      └──────────┬───────────┘</span>
+<span class="cmt">           │                           │</span>
+<span class="cmt">           └───────────┬───────────────┘</span>
+<span class="cmt">                       │</span>
+<span class="yellow">              ┌─────────▼──────────┐</span>
+<span class="yellow">              │  Same SQLite DB    │  ← no migration, no freeze</span>
+<span class="yellow">              └────────────────────┘</span>
+    </div>
+  </div>
+
+  <!-- ===== 5. LEGACY CODE ===== -->
+  <div class="slide" data-slide="4">
+    <div class="eyebrow">The Legacy Monolith</div>
+    <h2 style="margin-bottom:24px">The Smell: String-Concatenated SQL</h2>
+    <pre style="max-width:860px"><span class="cmt"># legacy_server.py — the PHP 5 sins, faithfully ported</span>
+
+<span class="kw">def</span> <span class="fn">sql_concat_query</span>(<span class="var">status_filter</span>, <span class="var">cid_filter</span>):
+    sql <span class="op">=</span> <span class="str">"""SELECT o.order_id, o.status, c.company_name ...
+             FROM orders o JOIN customers c ... WHERE 1=1"""</span>
+
+    <span class="kw">if</span> <span class="var">status_filter</span>:
+        sql <span class="op">+=</span> <span class="str">f" AND o.status = '<span class="red">{status_filter}</span>'"</span>   <span class="cmt"># ← injection</span>
+    <span class="kw">if</span> <span class="var">cid_filter</span>:
+        sql <span class="op">+=</span> <span class="str">f" AND o.customer_id = <span class="red">{cid_filter}</span>"</span>    <span class="cmt"># ← injection</span>
+
+    <span class="kw">return</span> sql
+
+<span class="cmt"># auth check — same pattern</span>
+sql <span class="op">=</span> <span class="str">f"SELECT * FROM employees WHERE username='<span class="red">{username}</span>' AND password='<span class="red">{password}</span>'"</span>
+emp <span class="op">=</span> con.<span class="fn">execute</span>(sql).<span class="fn">fetchone</span>()   <span class="cmt"># admin'-- logs in as anyone</span></pre>
+    <p class="muted center" style="margin-top:16px;font-size:14px">This is running live at <span class="accent">localhost:8081</span> — every query, every login, exactly this.</p>
+  </div>
+
+  <!-- ===== 6. MODERN CODE ===== -->
+  <div class="slide" data-slide="5">
+    <div class="eyebrow">The Modern Service</div>
+    <h2 style="margin-bottom:24px">The Fix: Prepared Statements</h2>
+    <pre style="max-width:860px"><span class="cmt">// modern/server.js — same query, same database, no injection</span>
+
+<span class="kw">const</span> <span class="var">OrderRepository</span> <span class="op">=</span> {
+  <span class="fn">list</span>(<span class="var">status</span> <span class="op">=</span> <span class="str">''</span>, <span class="var">customerId</span> <span class="op">=</span> <span class="num">0</span>) {
+    <span class="kw">const</span> conditions <span class="op">=</span> [<span class="str">'1=1'</span>];
+    <span class="kw">const</span> params     <span class="op">=</span> {};
+
+    <span class="kw">if</span> (<span class="var">status</span>)       { conditions.<span class="fn">push</span>(<span class="str">'o.status = $status'</span>);          params.<span class="var">$status</span>     <span class="op">=</span> <span class="var">status</span>; }
+    <span class="kw">if</span> (<span class="var">customerId</span>) { conditions.<span class="fn">push</span>(<span class="str">'o.customer_id = $customerId'</span>); params.<span class="var">$customerId</span> <span class="op">=</span> <span class="var">customerId</span>; }
+
+    <span class="kw">const</span> sql <span class="op">=</span> <span class="str">`SELECT ... WHERE <span class="green">${conditions.join(' AND ')}</span> ...`</span>;
+    <span class="kw">return</span> db.<span class="fn">prepare</span>(sql).<span class="fn">all</span>(<span class="green">params</span>);  <span class="cmt">// ← named parameters, no injection</span>
+  }
+};
+
+<span class="cmt">// GET /api/orders?status=pending</span>
+app.<span class="fn">get</span>(<span class="str">'/api/orders'</span>, (req, res) <span class="op">=&gt;</span> {
+  <span class="kw">const</span> orders <span class="op">=</span> <span class="var">OrderRepository</span>.<span class="fn">list</span>(req.query.<span class="var">status</span>, req.query.<span class="var">customer_id</span>);
+  res.<span class="fn">json</span>({ data: <span class="var">orders</span>, count: <span class="var">orders</span>.length });
+});</pre>
+    <p class="muted center" style="margin-top:16px;font-size:14px">Serving at <span class="green">localhost:8082</span> — same rows, same database, no injection surface.</p>
+  </div>
+
+  <!-- ===== 7. THE PROXY ===== -->
+  <div class="slide" data-slide="6">
+    <div class="eyebrow">The Control Plane</div>
+    <h2 style="margin-bottom:24px">Migrate a Route in One Line</h2>
+    <pre style="max-width:860px"><span class="cmt">// proxy/proxy.js — the migration control plane</span>
+
+<span class="kw">const</span> <span class="var">MODERN_ROUTES</span> <span class="op">=</span> [
+  <span class="green">/^\/api\/orders(\/|$)/</span>,           <span class="cmt">// ✅ extracted — routes to modern app</span>
+
+  <span class="cmt">// /^\/api\/customers(\/|$)/,       // uncomment when ready</span>
+  <span class="cmt">// /^\/api\/products(\/|$)/,        // uncomment when ready</span>
+  <span class="cmt">// /^\/api\/reports(\/|$)/,         // uncomment when ready</span>
+];
+
+<span class="kw">const</span> target <span class="op">=</span> <span class="var">MODERN_ROUTES</span>.<span class="fn">some</span>(re <span class="op">=&gt;</span> re.<span class="fn">test</span>(req.url))
+  <span class="op">?</span> <span class="var">MODERN</span>   <span class="cmt">// → http://localhost:8082</span>
+  <span class="op">:</span> <span class="var">LEGACY</span>;  <span class="cmt">// → http://localhost:8081  (untouched)</span>
+
+proxy.<span class="fn">web</span>(req, res, { target });</pre>
+    <p class="muted center" style="margin-top:16px;font-size:14px">The legacy server <span class="accent">never knows</span> it's being replaced. Rollback = comment out the line.</p>
+  </div>
+
+  <!-- ===== 8. WHAT'S RUNNING ===== -->
+  <div class="slide" data-slide="7">
+    <div class="eyebrow">Live Demo</div>
+    <h2 style="margin-bottom:28px">Three Processes, One Database</h2>
+    <div style="max-width:860px;width:100%">
+      <table>
+        <thead>
+          <tr><th>URL</th><th>Served by</th><th>What it is</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code style="color:var(--accent)">localhost:8080/</code></td>
+            <td>proxy → <span class="yellow">legacy</span></td>
+            <td>Full UI — login <code>admin / admin123</code></td>
+          </tr>
+          <tr>
+            <td><code style="color:var(--green)">localhost:8080/api/orders</code></td>
+            <td>proxy → <span class="green">modern</span></td>
+            <td>JSON, prepared statements, no injection</td>
+          </tr>
+          <tr>
+            <td><code style="color:var(--green)">localhost:8080/api/orders/1</code></td>
+            <td>proxy → <span class="green">modern</span></td>
+            <td>Single order + line items as JSON</td>
+          </tr>
+          <tr>
+            <td><code style="color:var(--muted)">localhost:8081/</code></td>
+            <td><span class="yellow">legacy</span> direct</td>
+            <td>Python port of the PHP 5 monolith</td>
+          </tr>
+          <tr>
+            <td><code style="color:var(--muted)">localhost:8082/api/orders</code></td>
+            <td><span class="green">modern</span> direct</td>
+            <td>Express + better-sqlite3</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted center" style="margin-top:20px;font-size:14px">All five URLs read from the <span class="yellow">same <code>northwind.db</code></span> file. No sync, no replication, no migration.</p>
+    </div>
+  </div>
+
+  <!-- ===== 9. MIGRATION ROADMAP ===== -->
+  <div class="slide" data-slide="8">
+    <div class="eyebrow">What's Next</div>
+    <h2 style="margin-bottom:28px">Route-by-Route Migration</h2>
+    <div class="cols cols-2" style="max-width:900px;align-items:start">
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot done">✓</div>
+          <div class="tl-body">
+            <p class="tl-title green">GET /api/orders</p>
+            <p class="muted" style="font-size:14px">List with status + customer filters. Live in modern app.</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot done">✓</div>
+          <div class="tl-body">
+            <p class="tl-title green">GET /api/orders/:id</p>
+            <p class="muted" style="font-size:14px">Single order with line items. Live in modern app.</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot next">→</div>
+          <div class="tl-body">
+            <p class="tl-title accent">POST /api/orders</p>
+            <p class="muted" style="font-size:14px">Create order. Needs auth middleware first.</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot future">·</div>
+          <div class="tl-body">
+            <p class="tl-title">POST /api/orders/:id/ship</p>
+            <p class="muted" style="font-size:14px">State change. High risk — test carefully.</p>
+          </div>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <h3>Legacy shrinks as modern grows</h3>
+          <p style="font-size:14px;margin-top:8px">Each migrated route is deleted from <code>legacy_server.py</code>. When that file is empty, the strangler is done.</p>
+        </div>
+        <div class="card green-border">
+          <h3 class="green">What never changes</h3>
+          <ul style="list-style:none;font-size:14px;display:flex;flex-direction:column;gap:6px;margin-top:8px">
+            <li>✅ &nbsp;The database schema</li>
+            <li>✅ &nbsp;The data</li>
+            <li>✅ &nbsp;The URL structure</li>
+            <li>✅ &nbsp;Anything the users see</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 10. WHAT WE PROVED ===== -->
+  <div class="slide" data-slide="9">
+    <div class="eyebrow">Key Takeaway</div>
+    <h2 style="margin-bottom:32px;text-align:center">Modernization is not a rewrite.<br><span class="gradient-text">It's a proxy and patience.</span></h2>
+    <div class="cols cols-3" style="max-width:900px">
+      <div class="card accent-border center">
+        <div style="font-size:36px;margin-bottom:12px">🪤</div>
+        <h3>No trap</h3>
+        <p style="font-size:14px;margin-top:8px">Legacy never goes offline. No cut-over weekend. No feature freeze.</p>
+      </div>
+      <div class="card accent-border center">
+        <div style="font-size:36px;margin-bottom:12px">🗄️</div>
+        <h3>No migration</h3>
+        <p style="font-size:14px;margin-top:8px">Both apps read the same database. Schema changes come later, separately.</p>
+      </div>
+      <div class="card accent-border center">
+        <div style="font-size:36px;margin-bottom:12px">↩️</div>
+        <h3>No risk</h3>
+        <p style="font-size:14px;margin-top:8px">Rollback is one commented line in the proxy. Legacy resumes immediately.</p>
+      </div>
+    </div>
+    <p class="muted center" style="margin-top:32px;font-size:14px">
+      Code at &nbsp;<span class="accent">github.com/livewirechannel29-arch/hackathon-team-bato</span> &nbsp;·&nbsp; branch <span class="accent">new_features</span>
+    </p>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- ---- nav ---- -->
+<div class="nav">
+  <button id="prev" onclick="go(-1)">&#8592;</button>
+  <div class="dot-row" id="dots"></div>
+  <span class="counter" id="counter"></span>
+  <button id="next" onclick="go(1)">&#8594;</button>
+</div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  let cur = 0;
+
+  const dots = document.getElementById('dots');
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' on' : '');
+    d.onclick = () => go(i - cur);
+    dots.appendChild(d);
+  });
+
+  function go(delta) {
+    const next = Math.max(0, Math.min(slides.length - 1, cur + delta));
+    if (next === cur) return;
+    slides[cur].classList.remove('active');
+    slides[cur].classList.add('out');
+    setTimeout(() => slides[cur - delta === next ? cur : cur].classList.remove('out'), 400);
+    slides[next].classList.add('active');
+    cur = next;
+    update();
+  }
+
+  function update() {
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('on', i === cur));
+    document.getElementById('counter').textContent = `${cur + 1} / ${slides.length}`;
+    document.getElementById('prev').disabled = cur === 0;
+    document.getElementById('next').disabled = cur === slides.length - 1;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ')  go(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                     go(-1);
+  });
+
+  update();
+</script>
+</body>
+</html>

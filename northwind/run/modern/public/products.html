@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Products — Northwind Logistics</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f4f6f9; --surface: #ffffff; --border: #e2e8f0;
+      --text: #1a202c; --muted: #718096; --accent: #3b82f6;
+      --shipped: #10b981; --pending: #f59e0b; --cancelled: #ef4444;
+      --nav-bg: #1e3a5f; --radius: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,.08);
+      --shadow-lg: 0 10px 25px rgba(0,0,0,.12);
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    nav { background: var(--nav-bg); padding: 0 24px; height: 44px; display: flex; align-items: center; gap: 0; position: sticky; top: 0; z-index: 10; }
+    .nav-brand { font-size: 15px; font-weight: 700; color: #fff; margin-right: 16px; white-space: nowrap; }
+    .nav-sep { color: rgba(255,255,255,.3); margin-right: 16px; }
+    .nav-links { display: flex; gap: 2px; flex: 1; }
+    .nav-link { color: rgba(255,255,255,.75); text-decoration: none; font-size: 13px; padding: 0 12px; height: 44px; display: flex; align-items: center; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
+    .nav-link:hover { color: #fff; }
+    .nav-link.active { color: #fff; border-bottom-color: #60a5fa; }
+    .nav-link.disabled { opacity: .4; cursor: default; pointer-events: none; }
+    .nav-user { font-size: 13px; color: rgba(255,255,255,.8); margin-left: auto; white-space: nowrap; }
+    .nav-user strong { color: #fff; }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 28px 24px; }
+
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
+    .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .stat-value { font-size: 26px; font-weight: 700; }
+    .stat-value.green { color: var(--shipped); }
+    .stat-value.amber { color: var(--pending); }
+    .stat-value.blue  { color: var(--accent); }
+
+    .page-header { margin-bottom: 16px; }
+    .page-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .filter-links { display: flex; gap: 4px; align-items: center; font-size: 13px; flex-wrap: wrap; }
+    .filter-sep { color: var(--muted); }
+    .filter-link { color: var(--accent); text-decoration: none; padding: 2px 6px; border-radius: 4px; transition: background .1s; cursor: pointer; }
+    .filter-link:hover { background: #eff6ff; }
+    .filter-link.active { color: var(--text); font-weight: 600; }
+
+    .toolbar { display: flex; gap: 12px; margin-bottom: 12px; align-items: center; }
+    .toolbar input { height: 34px; border: 1px solid var(--border); border-radius: 6px; padding: 0 12px; font-size: 13px; background: var(--surface); color: var(--text); outline: none; width: 220px; transition: border-color .15s; }
+    .toolbar input:focus { border-color: var(--accent); }
+    .result-count { font-size: 13px; color: var(--muted); margin-left: auto; }
+
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    thead { background: #f0f4f8; }
+    th { padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 700; color: var(--text); border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background .1s; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr.active { background: #eff6ff; }
+
+    .product-name { font-weight: 500; }
+    .view-link { color: var(--accent); font-size: 13px; font-weight: 500; cursor: pointer; }
+    .view-link:hover { text-decoration: underline; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .price { font-weight: 600; }
+    .stock-ok   { color: var(--shipped); font-weight: 600; }
+    .stock-low  { color: var(--pending); font-weight: 600; }
+    .stock-out  { color: var(--cancelled); font-weight: 600; }
+    .category-badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; background: #e0e7ff; color: #3730a3; }
+    .placeholder { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 15px; }
+
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 100; }
+    .overlay.open { display: block; }
+    .panel { position: fixed; top: 0; right: 0; bottom: 0; width: 420px; max-width: 100vw; background: var(--surface); box-shadow: var(--shadow-lg); overflow-y: auto; transform: translateX(100%); transition: transform .25s ease; z-index: 101; }
+    .panel.open { transform: translateX(0); }
+    .panel-header { background: var(--nav-bg); padding: 16px 20px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; position: sticky; top: 0; }
+    .panel-header h2 { font-size: 16px; font-weight: 700; color: #fff; }
+    .panel-header .sub { font-size: 12px; color: rgba(255,255,255,.7); margin-top: 2px; }
+    .close-btn { width: 28px; height: 28px; border: none; background: rgba(255,255,255,.15); cursor: pointer; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; transition: background .1s; }
+    .close-btn:hover { background: rgba(255,255,255,.25); }
+    .panel-body { padding: 20px; }
+    .section { margin-bottom: 22px; }
+    .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+    .info-item label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 2px; }
+    .info-item span { font-size: 14px; font-weight: 500; }
+    .big-price { font-size: 28px; font-weight: 700; color: var(--text); }
+
+    .loading-spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; margin: 60px auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 700px) { .stats { grid-template-columns: repeat(2,1fr); } .panel { width: 100vw; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand">Northwind Logistics</span>
+  <span class="nav-sep">|</span>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">Orders</a>
+    <a class="nav-link" href="customers.html">Customers</a>
+    <a class="nav-link active" href="products.html">Products</a>
+    <a class="nav-link" href="reports.html">Reports</a>
+  </div>
+  <span class="nav-user">logged in as <strong>Gary Chen</strong></span>
+</nav>
+
+<main>
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Total Products</div><div class="stat-value" id="stat-total">—</div></div>
+    <div class="stat"><div class="stat-label">Categories</div><div class="stat-value blue" id="stat-cats">—</div></div>
+    <div class="stat"><div class="stat-label">In Stock</div><div class="stat-value green" id="stat-instock">—</div></div>
+    <div class="stat"><div class="stat-label">Low / Out</div><div class="stat-value amber" id="stat-low">—</div></div>
+  </div>
+
+  <div class="page-header">
+    <h1>Products</h1>
+    <div class="filter-links" id="filter-links">
+      <span class="filter-link active" data-cat="">All</span>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="Search product…" />
+    <span class="result-count" id="result-count"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Product Name</th>
+          <th>Category</th>
+          <th>Supplier</th>
+          <th>Unit Price</th>
+          <th>In Stock</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</main>
+
+<div class="overlay" id="overlay"></div>
+<aside class="panel" id="panel">
+  <div class="panel-header">
+    <div>
+      <h2 id="panel-title">Product</h2>
+      <div class="sub" id="panel-sub"></div>
+    </div>
+    <button class="close-btn" id="close-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <div class="panel-body" id="panel-body"><div class="loading-spinner"></div></div>
+</aside>
+
+<script>
+  const tbody   = document.getElementById('tbody');
+  const overlay = document.getElementById('overlay');
+  const panel   = document.getElementById('panel');
+
+  let allProducts = [], activeRow = null, activeCat = '';
+
+  async function load() {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="loading-spinner"></div></td></tr>`;
+    const res  = await fetch('/api/products');
+    const json = await res.json();
+    allProducts = json.data;
+
+    const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))].sort();
+    document.getElementById('stat-total').textContent   = allProducts.length;
+    document.getElementById('stat-cats').textContent    = cats.length;
+    document.getElementById('stat-instock').textContent = allProducts.filter(p => p.units_in_stock > 10).length;
+    document.getElementById('stat-low').textContent     = allProducts.filter(p => p.units_in_stock <= 10).length;
+
+    // Build category filter links
+    const fl = document.getElementById('filter-links');
+    fl.innerHTML = `<span class="filter-link active" data-cat="">All</span>`;
+    cats.forEach(cat => {
+      const s = Object.assign(document.createElement('span'), { className: 'filter-link', textContent: cat });
+      s.dataset.cat = cat;
+      const sep = Object.assign(document.createElement('span'), { className: 'filter-sep', textContent: '|' });
+      fl.appendChild(sep);
+      fl.appendChild(s);
+    });
+    fl.querySelectorAll('.filter-link').forEach(el => {
+      el.addEventListener('click', () => {
+        fl.querySelectorAll('.filter-link').forEach(x => x.classList.remove('active'));
+        el.classList.add('active');
+        activeCat = el.dataset.cat;
+        render(filtered());
+      });
+    });
+
+    render(allProducts);
+  }
+
+  function filtered() {
+    const q = document.getElementById('search').value.toLowerCase();
+    return allProducts.filter(p =>
+      (!activeCat || p.category === activeCat) &&
+      (!q || p.product_name.toLowerCase().includes(q) || (p.supplier_name || '').toLowerCase().includes(q))
+    );
+  }
+
+  function stockClass(n) { return n === 0 ? 'stock-out' : n <= 10 ? 'stock-low' : 'stock-ok'; }
+
+  function render(list) {
+    document.getElementById('result-count').textContent =
+      list.length === allProducts.length ? `${list.length} products` : `${list.length} of ${allProducts.length} products`;
+
+    if (!list.length) { tbody.innerHTML = `<tr><td colspan="7"><div class="placeholder">No products found.</div></td></tr>`; return; }
+
+    tbody.innerHTML = list.map(p => `
+      <tr data-id="${p.product_id}">
+        <td class="muted">${p.product_id}</td>
+        <td class="product-name">${esc(p.product_name)}</td>
+        <td><span class="category-badge">${esc(p.category || '—')}</span></td>
+        <td class="muted">${esc(p.supplier_name || '—')}</td>
+        <td class="price">$${Number(p.unit_price).toFixed(2)}</td>
+        <td><span class="${stockClass(p.units_in_stock)}">${p.units_in_stock}</span></td>
+        <td><span class="view-link">View</span></td>
+      </tr>`).join('');
+
+    tbody.querySelectorAll('tr').forEach(tr => {
+      tr.addEventListener('click', () => openPanel(Number(tr.dataset.id), tr));
+      tr.querySelector('.view-link').addEventListener('click', e => { e.stopPropagation(); openPanel(Number(tr.dataset.id), tr); });
+    });
+  }
+
+  document.getElementById('search').addEventListener('input', () => render(filtered()));
+
+  async function openPanel(id, row) {
+    if (activeRow) activeRow.classList.remove('active');
+    activeRow = row; row.classList.add('active');
+    document.getElementById('panel-title').textContent = 'Loading…';
+    document.getElementById('panel-sub').textContent = '';
+    document.getElementById('panel-body').innerHTML = `<div class="loading-spinner"></div>`;
+    overlay.classList.add('open'); panel.classList.add('open');
+
+    const res = await fetch(`/api/products/${id}`);
+    const p   = await res.json();
+
+    document.getElementById('panel-title').textContent = p.product_name;
+    document.getElementById('panel-sub').textContent   = p.category || '';
+
+    document.getElementById('panel-body').innerHTML = `
+      <div class="section">
+        <div class="big-price">$${Number(p.unit_price).toFixed(2)}</div>
+        <div style="margin-top:6px"><span class="category-badge">${esc(p.category || '—')}</span></div>
+      </div>
+      <div class="section">
+        <div class="section-title">Inventory</div>
+        <div class="info-grid">
+          <div class="info-item"><label>Units in Stock</label><span class="${stockClass(p.units_in_stock)}">${p.units_in_stock}</span></div>
+          <div class="info-item"><label>Status</label><span>${p.units_in_stock === 0 ? 'Out of Stock' : p.units_in_stock <= 10 ? 'Low Stock' : 'In Stock'}</span></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Supplier</div>
+        <div class="info-grid">
+          <div class="info-item" style="grid-column:span 2"><label>Company</label><span>${esc(p.supplier_name || '—')}</span></div>
+          <div class="info-item"><label>Contact</label><span>${esc(p.supplier_contact || '—')}</span></div>
+          <div class="info-item"><label>Phone</label><span>${esc(p.supplier_phone || '—')}</span></div>
+          <div class="info-item" style="grid-column:span 2"><label>Email</label><span>${esc(p.supplier_email || '—')}</span></div>
+        </div>
+      </div>`;
+  }
+
+  function closePanel() {
+    overlay.classList.remove('open'); panel.classList.remove('open');
+    if (activeRow) { activeRow.classList.remove('active'); activeRow = null; }
+  }
+  document.getElementById('close-btn').addEventListener('click', closePanel);
+  overlay.addEventListener('click', closePanel);
+
+  function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  load();
+</script>
+</body>
+</html>
