@@ -9,6 +9,10 @@
 
 import express from 'express';
 import Database from 'better-sqlite3';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const db = new Database(':memory:');
 db.pragma('journal_mode = WAL');
@@ -111,6 +115,7 @@ db.exec(`
 
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ---------------------------------------------------------------------------
 // Repository — all SQL uses prepared statements, named params
